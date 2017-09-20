@@ -215,7 +215,7 @@ def get_pipeline(target_appliance, activations):
 def train(pipeline, model):
     # create output directory
     print('Creating output directory ... ', end='')
-    output_dir = os.path.join(dirs.OUTPUT_DIR,
+    output_dir = os.path.join(dirs.TRAIN_OUTPUT_DIR,
                               DATASET + '_' + TARGET_APPLIANCE + '_' + strftime('%Y-%m-%d_%H-%M-%S'))
     os.makedirs(output_dir)
     print(output_dir)
