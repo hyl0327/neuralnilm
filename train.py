@@ -45,19 +45,8 @@ BRIEFING_NUM_STEPS = 1000
 
 
 # Main
-def main(dataset, target_appliance, sample_period, num_steps, topology_name, override):
-    global DATASET, NILMTK_FILENAME, TARGET_APPLIANCE
-    global SAMPLE_PERIOD, NUM_SEQ_PER_BATCH, NUM_STEPS
-    global BRIEFING_NUM_STEPS, TOPOLOGY_NAME, OVERRIDE
-
-    DATASET = dataset
-    NILMTK_FILENAME = os.path.join(dirs.DATA_DIR, DATASET + '.h5')
-    TARGET_APPLIANCE = target_appliance
-    SAMPLE_PERIOD = sample_period
-    NUM_STEPS = num_steps
-    TOPOLOGY_NAME = topology_name
-    OVERRIDE = override
-
+def main():
+    parse_args()
     load_config()
 
     # load the activations
@@ -102,6 +91,53 @@ def main(dataset, target_appliance, sample_period, num_steps, topology_name, ove
     # save the model
     print('Saving the model to ' + model_filename + ' ...')
     model.save(model_filename)
+
+
+# Argument parser
+def parse_args():
+    global DATASET, NILMTK_FILENAME, TARGET_APPLIANCE
+    global SAMPLE_PERIOD, NUM_SEQ_PER_BATCH, NUM_STEPS
+    global BRIEFING_NUM_STEPS, TOPOLOGY_NAME, OVERRIDE
+
+    parser = argparse.ArgumentParser()
+
+    # required
+    required_named_arguments = parser.add_argument_group('required named arguments')
+    required_named_arguments.add_argument('-d', '--dataset',
+                                          help='Dataset\'s name. For example, \'redd\'.',
+                                          required=True)
+    required_named_arguments.add_argument('-a', '--target-appliance',
+                                          help='Target appliance. For example, \'fridge\'.',
+                                          required=True)
+    required_named_arguments.add_argument('-s', '--sample-period',
+                                          help='Sample period (in seconds).',
+                                          type=int,
+                                          required=True)
+    required_named_arguments.add_argument('-t', '--num-steps',
+                                          help='Number of steps.',
+                                          type=int,
+                                          required=True)
+    required_named_arguments.add_argument('-m', '--topology-name',
+                                          help='Topology\'s name. For example, \'dae\'.',
+                                          required=True)
+
+    # optional
+    optional_named_arguments = parser.add_argument_group('optional named arguments')
+    optional_named_arguments.add_argument('-o', '--override',
+                                          help='Flag to override existing model (if there\'s one).',
+                                          action='store_true')
+
+    # start parsing
+    args = parser.parse_args()
+
+    DATASET = args.dataset
+    NILMTK_FILENAME = os.path.join(dirs.DATA_DIR, DATASET + '.h5')
+    TARGET_APPLIANCE = args.target_appliance
+    SAMPLE_PERIOD = args.sample_period
+    NUM_STEPS = args.num_steps
+    TOPOLOGY_NAME = args.topology_name
+
+    OVERRIDE = args.override
 
 
 # Config loader
@@ -243,39 +279,4 @@ def train(pipeline, model):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    # required
-    required_named_arguments = parser.add_argument_group('required named arguments')
-    required_named_arguments.add_argument('-d', '--dataset',
-                                          help='Dataset\'s name. For example, \'redd\'.',
-                                          required=True)
-    required_named_arguments.add_argument('-a', '--target-appliance',
-                                          help='Target appliance. For example, \'fridge\'.',
-                                          required=True)
-    required_named_arguments.add_argument('-s', '--sample-period',
-                                          help='Sample period (in seconds).',
-                                          type=int,
-                                          required=True)
-    required_named_arguments.add_argument('-t', '--num-steps',
-                                          help='Number of steps.',
-                                          type=int,
-                                          required=True)
-    required_named_arguments.add_argument('-m', '--topology-name',
-                                          help='Topology\'s name. For example, \'dae\'.',
-                                          required=True)
-
-    # optional
-    optional_named_arguments = parser.add_argument_group('optional named arguments')
-    optional_named_arguments.add_argument('-o', '--override',
-                                          help='Flag to override existing model (if there\'s one).',
-                                          action='store_true')
-
-    # start parsing and pass arguments to main
-    args = parser.parse_args()
-    main(dataset=args.dataset,
-         target_appliance=args.target_appliance,
-         sample_period=args.sample_period,
-         num_steps=args.num_steps,
-         topology_name=args.topology_name,
-         override=args.override)
+    main()
