@@ -1,2 +1,2 @@
-# neuralnilm
-NeuralNILM
+# neuralnilmtp
+NeuralNILM TaiPower
