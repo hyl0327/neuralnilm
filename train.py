@@ -8,6 +8,7 @@ import argparse
 import importlib
 from time import strftime
 
+import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -229,10 +230,11 @@ def train(pipeline, model):
         os.makedirs(os.path.join(output_dir, str(i)))
 
     # run
+    log = []
     for step in range(NUM_STEPS + 1):
         # generate batch
         batch = pipeline.get_batch()
-        if batch is None:
+        while batch is None:
             batch = pipeline.get_batch()
 
         # train on a single batch (except for step 0, so that the code below can
@@ -273,9 +275,19 @@ def train(pipeline, model):
                     print('{}={:.4f}, '.format(metrics_name, valid_metrics[i]), end='')
                 print('')
 
+                # append to log
+                log.append([step] + train_metrics + valid_metrics)
+
     print('===============================================================================')
     print('=============================== End of training ===============================')
     print('===============================================================================')
+
+    # write the log
+    print('Writing log ...')
+    log_df = pd.DataFrame(log, columns=(['step'] +
+                                        ['train_'+metrics_name for metrics_name in model.metrics_names] +
+                                        ['valid_'+metrics_name for metrics_name in model.metrics_names]))
+    log_df.to_csv(os.path.join(output_dir, 'log.csv'), index=False, float_format='%.4f')
 
 
 if __name__ == '__main__':
