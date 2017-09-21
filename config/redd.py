@@ -17,17 +17,7 @@ WINDOWS = {
 }
 
 
-# Appliances
-APPLIANCES = [
-    'kettle',
-    'microwave',
-    'washing machine',
-    'dish washer',
-    'fridge',
-]
-
-
-# Training & validation buildings, and testing buildings
+# Training & validation buildings, and testing buildings for each appliance
 BUILDINGS = {
     'kettle': {
         'train_buildings': [1, 2],

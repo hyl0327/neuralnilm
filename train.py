@@ -11,6 +11,7 @@ from time import strftime
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from keras.models import load_model
 
 from neuralnilm.data.loadactivations import load_nilmtk_activations
 from neuralnilm.data.syntheticaggregatesource import SyntheticAggregateSource
@@ -25,7 +26,6 @@ from lib import dirs
 
 # Config
 WINDOWS = None
-APPLIANCES = None
 BUILDINGS = None
 SEQ_PERIODS = None
 
@@ -53,7 +53,7 @@ def main():
     # load the activations
     print('Loading activations ...')
     activations = load_nilmtk_activations(
-        appliances=APPLIANCES,
+        appliances=[TARGET_APPLIANCE],
         filename=NILMTK_FILENAME,
         sample_period=SAMPLE_PERIOD,
         windows=WINDOWS
@@ -75,7 +75,6 @@ def main():
     model_filename = os.path.join(dirs.MODELS_DIR, TARGET_APPLIANCE + '.h5')
     if not OVERRIDE and os.path.exists(model_filename):
         print('Found; loading it ...')
-        from keras.models import load_model
         model = load_model(model_filename)
     else:
         if OVERRIDE:
@@ -143,12 +142,11 @@ def parse_args():
 
 # Config loader
 def load_config():
-    global WINDOWS, APPLIANCES, BUILDINGS, SEQ_PERIODS
+    global WINDOWS, BUILDINGS, SEQ_PERIODS
 
     # dataset-dependent config
     config_module = importlib.import_module(dirs.CONFIG_DIR + '.' + DATASET, __name__)
     WINDOWS = config_module.WINDOWS
-    APPLIANCES = config_module.APPLIANCES
     BUILDINGS = config_module.BUILDINGS
 
     # sequence periods (shared among datasets)
@@ -171,7 +169,7 @@ def get_pipeline(target_appliance, activations):
     filtered_windows = select_windows(
         train_buildings, unseen_buildings, WINDOWS)
     filtered_activations = filter_activations(
-        filtered_windows, activations, APPLIANCES)
+        filtered_windows, activations, [target_appliance])
 
     # data sources
     synthetic_agg_source = SyntheticAggregateSource(
