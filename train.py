@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from keras.models import load_model
-
 from neuralnilm.data.loadactivations import load_nilmtk_activations
 from neuralnilm.data.syntheticaggregatesource import SyntheticAggregateSource
 from neuralnilm.data.realaggregatesource import RealAggregateSource
@@ -59,9 +58,8 @@ def main():
         windows=WINDOWS
     )
 
-    # generate data pipeline
-    print('Generating data pipeline ...')
-    pipeline = get_pipeline(TARGET_APPLIANCE, activations)
+    # generate pipeline
+    pipeline = get_pipeline(activations)
 
     # determine the input shape
     print('Determining input shape ... ', end='')
@@ -155,13 +153,13 @@ def load_config():
 
 
 # Pipeline
-def get_pipeline(target_appliance, activations):
+def get_pipeline(activations):
     # sequence periods
-    seq_period = SEQ_PERIODS[target_appliance]
+    seq_period = SEQ_PERIODS[TARGET_APPLIANCE]
     seq_length = seq_period // SAMPLE_PERIOD
 
     # buildings
-    buildings = BUILDINGS[target_appliance]
+    buildings = BUILDINGS[TARGET_APPLIANCE]
     train_buildings = buildings['train_buildings']
     unseen_buildings = buildings['unseen_buildings']
 
@@ -169,25 +167,25 @@ def get_pipeline(target_appliance, activations):
     filtered_windows = select_windows(
         train_buildings, unseen_buildings, WINDOWS)
     filtered_activations = filter_activations(
-        filtered_windows, activations, [target_appliance])
+        filtered_windows, activations, [TARGET_APPLIANCE])
 
     # data sources
     synthetic_agg_source = SyntheticAggregateSource(
         activations=filtered_activations,
-        target_appliance=target_appliance,
+        target_appliance=TARGET_APPLIANCE,
         seq_length=seq_length,
         sample_period=SAMPLE_PERIOD
     )
     real_agg_source = RealAggregateSource(
         activations=filtered_activations,
-        target_appliance=target_appliance,
+        target_appliance=TARGET_APPLIANCE,
         seq_length=seq_length,
         filename=NILMTK_FILENAME,
         windows=filtered_windows,
         sample_period=SAMPLE_PERIOD
     )
     stride_source = StrideSource(
-        target_appliance=target_appliance,
+        target_appliance=TARGET_APPLIANCE,
         seq_length=seq_length,
         filename=NILMTK_FILENAME,
         windows=filtered_windows,
@@ -195,11 +193,27 @@ def get_pipeline(target_appliance, activations):
         stride=None
     )
 
-    # normalize and generate pipeline
-    sample = real_agg_source.get_batch(num_seq_per_batch=1024).next()
-    sample = sample.before_processing
-    input_std = sample.input.flatten().std()
-    target_std = sample.target.flatten().std()
+    # look for existing processing parameters only when OVERRIDE is not on; if
+    # none, generate new ones
+    print('Looking for existing processing parameters ... ', end='')
+    proc_params_filename = os.path.join(dirs.MODELS_DIR, 'proc_params_' + TARGET_APPLIANCE + '.npz')
+    if not OVERRIDE and os.path.exists(proc_params_filename):
+        print('Found; using them ...')
+        input_std, target_std = np.load(proc_params_filename)['arr_0']
+    else:
+        if OVERRIDE:
+            print('Overridden; generating new ones ...')
+        else:
+            print('Not found; generating new ones ...')
+        sample = real_agg_source.get_batch(num_seq_per_batch=1024).next()
+        sample = sample.before_processing
+        input_std = sample.input.flatten().std()
+        target_std = sample.target.flatten().std()
+
+        print('Saving the processing parameters ...')
+        np.savez(proc_params_filename, [input_std, target_std])
+
+    # generate pipeline
     pipeline = DataPipeline(
         [synthetic_agg_source, real_agg_source, stride_source],
         num_seq_per_batch=NUM_SEQ_PER_BATCH,
