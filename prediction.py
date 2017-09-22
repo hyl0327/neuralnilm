@@ -78,7 +78,7 @@ def main():
     combined_prediction_output = np.zeros(data.shape[0])
     overlapping_count = np.zeros(data.shape[0], dtype=int)
     for i, pred in enumerate(prediction_output):
-        start_index, end_index = (i*STRIDE, (i+1)*STRIDE)
+        start_index, end_index = (i*STRIDE, i*STRIDE+seq_length)
         combined_prediction_output[start_index:end_index] += pred.flatten()
         overlapping_count[start_index:end_index] += 1
     combined_prediction_output /= overlapping_count
