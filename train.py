@@ -11,7 +11,6 @@ from time import strftime
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from keras.models import load_model
 from neuralnilm.data.loadactivations import load_nilmtk_activations
 from neuralnilm.data.syntheticaggregatesource import SyntheticAggregateSource
 from neuralnilm.data.realaggregatesource import RealAggregateSource
@@ -73,6 +72,7 @@ def main():
     model_filename = os.path.join(dirs.MODELS_DIR, TARGET_APPLIANCE + '.h5')
     if not OVERRIDE and os.path.exists(model_filename):
         print('Found; loading it ...')
+        from keras.models import load_model
         model = load_model(model_filename)
     else:
         if OVERRIDE:
