@@ -58,7 +58,7 @@ def main():
     )
 
     # generate pipeline
-    pipeline = get_pipeline(activations)
+    pipeline, input_std, target_std = get_pipeline(activations)
 
     # determine the input shape
     print('Determining input shape ... ', end='')
@@ -79,8 +79,17 @@ def main():
             print('Overridden; building a new one with the specified topology ...')
         else:
             print('Not found; building a new one with the specified topology ...')
+
+        # define accuracy
+        import keras.backend as K
+        ON_POWER_THRESHOLD = DivideBy(target_std)(10)
+        def acc(y_true, y_pred):
+            return K.mean(K.equal(K.greater_equal(y_true, ON_POWER_THRESHOLD),
+                                  K.greater_equal(y_pred, ON_POWER_THRESHOLD)))
+
+        # build model
         topology_module = importlib.import_module(dirs.TOPOLOGIES_DIR + '.' + TOPOLOGY_NAME, __name__)
-        model = topology_module.build_model(input_shape)
+        model = topology_module.build_model(input_shape, acc)
 
     # train
     print('Preparing the training process ...')
@@ -221,7 +230,7 @@ def get_pipeline(activations):
         target_processing=[DivideBy(target_std)]
     )
 
-    return pipeline
+    return pipeline, input_std, target_std
 
 
 # Trainer
@@ -280,11 +289,15 @@ def train(pipeline, model):
                 print('Step {}:'.format(step))
                 print('  Training metrics: ', end='')
                 for i, metrics_name in enumerate(model.metrics_names):
-                    print('{}={:.4f}, '.format(metrics_name, train_metrics[i]), end='')
+                    # ignore loss
+                    if metrics_name != 'loss':
+                        print('{}={:.4f}, '.format(metrics_name, train_metrics[i]), end='')
                 print('')
                 print('  Validation metrics: ', end='')
                 for i, metrics_name in enumerate(model.metrics_names):
-                    print('{}={:.4f}, '.format(metrics_name, valid_metrics[i]), end='')
+                    # ignore loss
+                    if metrics_name != 'loss':
+                        print('{}={:.4f}, '.format(metrics_name, valid_metrics[i]), end='')
                 print('')
 
                 # append to log
