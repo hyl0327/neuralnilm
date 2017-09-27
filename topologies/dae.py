@@ -1,5 +1,6 @@
 """ Denoising Auto-Encoder """
 
+import keras.backend as K
 from keras.models import Sequential
 from keras.layers.convolutional import Conv1D
 from keras.layers import Dense, Activation, Reshape, Flatten
@@ -50,9 +51,15 @@ def build_model(input_shape):
                      padding=MODEL_CONV_PADDING))
     model.add(Activation('linear'))
 
+    # define accuracy
+    ON_POWER_THRESHOLD = 10
+    def acc(y_true, y_pred):
+        return K.mean(K.equal(K.greater_equal(y_true, ON_POWER_THRESHOLD),
+                              K.greater_equal(y_pred, ON_POWER_THRESHOLD)))
+
     # compile it!
     model.compile(loss='mean_squared_error',
                   optimizer='adam',
-                  metrics=['acc', 'mae', 'mse'])
+                  metrics=['mae', acc])
 
     return model
