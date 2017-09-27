@@ -34,6 +34,7 @@ def main():
     data = pd.read_csv(INPUT_FILENAME,
                        parse_dates=['reporttime'],
                        index_col='reporttime')[['w']].resample('{}S'.format(SAMPLE_PERIOD)).max().ffill().sort_index()
+    data_values = data['w'].values
 
     # load the model
     print('Loading model ...')
@@ -44,7 +45,7 @@ def main():
     # determine sequence length, and set STRIDE to sequence length if it's not
     # specified by user
     print('Determining sequence length ... ', end='')
-    seq_length = model.get_input_shape_at(0)[1]
+    seq_length = model.input_shape[1]
     print(seq_length)
     if STRIDE is None:
         print('STRIDE wasn\'t specified; setting it to {} ...'.format(seq_length))
@@ -88,7 +89,8 @@ def main():
     combined_prediction_output = combined_prediction_output[:original_data_len]
 
     # apply inverse processing to prediction
-    combined_prediction_output = DivideBy(target_std).inverse(combined_prediction_output)
+    target_processing = DivideBy(target_std)
+    combined_prediction_output = target_processing.inverse(combined_prediction_output)
 
     # output
     print('Creating output directory ... ', end='')
@@ -104,9 +106,50 @@ def main():
     p1.set_title('Input')
     p2 = plt.subplot(122, sharey=p1)
     p2.set_title('Prediction')
-    p1.plot(data['w'].values)
+    p1.plot(data_values)
     p2.plot(combined_prediction_output)
     plt.savefig(os.path.join(output_dir, 'prediction.png'))
+
+    # perform validation (if asked to)
+    if VALID_TARGET_FILENAME:
+        valid_target = pd.read_csv(INPUT_FILENAME,
+                                   parse_dates=['reporttime'],
+                                   index_col='reporttime')[['w']].resample('{}S'.format(SAMPLE_PERIOD)).max().ffill().sort_index()
+        valid_target_values = valid_target['w'].values
+        assert(valid_target_values.shape[0] == combined_prediction_output.shape[0])
+
+        # define metrics
+        def mean_squared_error(y_true, y_pred):
+            return ((y_true - y_pred)**2).mean()
+        def mean_absolute_error(y_true, y_pred):
+            return (np.abs(y_true - y_pred)).mean()
+        ON_POWER_THRESHOLD = target_processing(10)
+        def acc(y_true, y_pred):
+            return np.mean((y_true >= ON_POWER_THRESHOLD) == (y_pred >= ON_POWER_THRESHOLD))
+        metrics = [mean_squared_error, mean_absolute_error, acc]
+
+        print('Validation metrics: ', end='')
+        log = pd.DataFrame()
+        for m in metrics:
+            m_name = m.func_name
+            m_value = m(target_processing(valid_target_values), target_processing(combined_prediction_output))
+            log[m_name] = [m_value]
+            print('{}={:.4f}, '.format(m_name, m_value), end='')
+        print('Writing log ...')
+        log.to_csv(os.path.join(output_dir, 'log.csv'), index=False, float_format='%.4f')
+        print('')
+
+        print('Generating validation.png ...')
+        p1 = plt.subplot(131)
+        p1.set_title('Input')
+        p2 = plt.subplot(132, sharey=p1)
+        p2.set_title('Target')
+        p3 = plt.subplot(133, sharey=p1)
+        p3.set_title('Prediction')
+        p1.plot(data_values)
+        p2.plot(valid_target_values)
+        p3.plot(combined_prediction_output)
+        plt.savefig(os.path.join(output_dir, 'validation.png'))
 
 
 # Argument parser
