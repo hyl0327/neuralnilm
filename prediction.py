@@ -112,7 +112,7 @@ def main():
 
     # perform validation (if asked to)
     if VALID_TARGET_FILENAME:
-        valid_target = pd.read_csv(INPUT_FILENAME,
+        valid_target = pd.read_csv(VALID_TARGET_FILENAME,
                                    parse_dates=['reporttime'],
                                    index_col='reporttime')[['w']].resample('{}S'.format(SAMPLE_PERIOD)).max().ffill().sort_index()
         valid_target_values = valid_target['w'].values
