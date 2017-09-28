@@ -135,6 +135,7 @@ def main():
             m_value = m(target_processing(valid_target_values), target_processing(combined_prediction_output))
             log[m_name] = [m_value]
             print('{}={:.4f}, '.format(m_name, m_value), end='')
+        print('')
         print('Writing log ...')
         log.to_csv(os.path.join(output_dir, 'log.csv'), index=False, float_format='%.4f')
         print('')
