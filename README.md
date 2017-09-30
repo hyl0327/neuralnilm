@@ -1,4 +1,4 @@
-# neuralnilmtp
+neuralnilmtp
 ==============
 
 NeuralNILM TaiPower is an implementation of Jack
