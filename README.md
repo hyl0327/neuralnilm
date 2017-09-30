@@ -71,8 +71,16 @@ After training, it will store its output in `<TRAIN_OUTPUT_DIR>`.
 
 ## Prediction
 
+Besides the information given by running `<ROOT_DIR>/prediction.py -h`, there
+are some more things that one should note.
+
 Prediction works by going though an arbitrarily long sequence of mains data, and
 predicting a given appliance's energy usage along the way. It can optionally
 take a validation sequence, which is the target energy usage (ground truth).
+
+The input and target sequences must be in the format of `.csv`, where there
+should be exactly two columns - `reporttime` and `w`, which, as their names
+suggest, are the datetime an entry was recorded, and the energy usage in watts
+at that time, respectively.
 
 After prediction, it will store its output in `<PREDICTION_OUTPUT_DIR>`.
