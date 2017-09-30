@@ -30,9 +30,9 @@ Generally speaking, `<FOO_BAR_DIR>` refers to the directory
 
 ## Datasets
 
-NeuralNILM TaiPower expects datasets to be in the format of NILMTK
-(http://nilmtk.github.io), which are basically `.h5` files, and requires them to
-be placed in `<DATA_DIR>`.
+NeuralNILM TaiPower expects datasets to be in the format
+of [NILMTK](http://nilmtk.github.io), which are basically `.h5` files, and
+requires them to be placed in `<DATA_DIR>`.
 
 For each dataset, one should add a corresponding configuration file to
 `<CONFIG_DIR>`, which must have the same name as the dataset, but with an
