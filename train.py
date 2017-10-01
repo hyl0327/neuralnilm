@@ -289,15 +289,11 @@ def train(pipeline, model):
                 print('Step {}:'.format(step))
                 print('  Training metrics: ', end='')
                 for i, metrics_name in enumerate(model.metrics_names):
-                    # ignore loss
-                    if metrics_name != 'loss':
-                        print('{}={:.4f}, '.format(metrics_name, train_metrics[i]), end='')
+                    print('{}={:.4f}, '.format(metrics_name, train_metrics[i]), end='')
                 print('')
                 print('  Validation metrics: ', end='')
                 for i, metrics_name in enumerate(model.metrics_names):
-                    # ignore loss
-                    if metrics_name != 'loss':
-                        print('{}={:.4f}, '.format(metrics_name, valid_metrics[i]), end='')
+                    print('{}={:.4f}, '.format(metrics_name, valid_metrics[i]), end='')
                 print('')
 
                 # append to log
